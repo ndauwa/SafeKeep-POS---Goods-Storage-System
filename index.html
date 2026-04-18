@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeKeep POS — Goods Storage & Handling System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161d;
+    --bg3: #1a1e28;
+    --bg4: #1e2330;
+    --card: #181c26;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: #8a8fa8;
+    --text3: #555a70;
+    --accent: #4f9eff;
+    --accent2: #2563eb;
+    --green: #22c55e;
+    --green2: #16a34a;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --purple: #8b5cf6;
+    --cyan: #06b6d4;
+    --font: 'Sora', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --radius2: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 10px;
+  }
+
+  .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 10px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+
+  nav { flex: 1; padding: 16px 12px; }
+
+  .nav-section-label {
+    font-size: 9px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--text3); padding: 0 8px; margin: 16px 0 6px;
+  }
+
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px;
+    border: none; background: none; color: var(--text2);
+    font-family: var(--font); font-size: 13px; font-weight: 400;
+    cursor: pointer; width: 100%; text-align: left;
+    transition: all 0.15s;
+  }
+
+  .nav-btn:hover { background: var(--bg3); color: var(--text); }
+
+  .nav-btn.active {
+    background: rgba(79,158,255,0.12);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .nav-btn .icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .nav-btn.active .icon { opacity: 1; }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .staff-badge {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    background: var(--bg3);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .staff-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: white; flex-shrink: 0;
+  }
+
+  .staff-name { font-size: 12px; font-weight: 500; }
+  .staff-role { font-size: 10px; color: var(--text3); }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: 220px;
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    height: 56px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .page-title { font-size: 15px; font-weight: 600; flex: 1; }
+
+  .topbar-clock {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text2);
+    background: var(--bg3);
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .content { padding: 28px; flex: 1; }
+
+  /* ── VIEWS ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 24px;
+  }
+
+  .card-sm { padding: 16px 20px; }
+
+  .card-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--text2); letter-spacing: 0.5px;
+    text-transform: uppercase; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ── STATS GRID ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 20px;
+    position: relative; overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-color, var(--accent));
+  }
+
+  .stat-val {
+    font-size: 32px; font-weight: 700;
+    font-family: var(--mono);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-top: 6px;
+  }
+
+  .stat-change {
+    font-size: 11px; margin-top: 4px;
+    color: var(--green);
+  }
+
+  /* ── FORMS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+
+  label {
+    font-size: 11px; font-weight: 500;
+    color: var(--text3); letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,158,255,0.1);
+  }
+
+  select option { background: var(--bg3); }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 10px 20px;
+    border: none; border-radius: 8px;
+    font-family: var(--font); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #3b8aef; transform: translateY(-1px); }
+
+  .btn-success {
+    background: var(--green);
+    color: white;
+  }
+  .btn-success:hover { background: var(--green2); }
+
+  .btn-danger {
+    background: var(--red);
+    color: white;
+  }
+  .btn-danger:hover { background: #dc2626; }
+
+  .btn-ghost {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--bg4); color: var(--text); }
+
+  .btn-lg { padding: 14px 28px; font-size: 15px; border-radius: 10px; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.3px;
+  }
+
+  .badge-active { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .badge-collected { background: rgba(79,158,255,0.15); color: var(--accent); border: 1px solid rgba(79,158,255,0.2); }
+  .badge-overdue { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-pending { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.2); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    text-align: left; padding: 10px 14px;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text3); font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  .mono { font-family: var(--mono); font-size: 12px; }
+
+  /* ── WEBCAM ── */
+  #camera-feed, #camera-preview {
+    width: 100%; border-radius: 10px;
+    background: var(--bg);
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+  }
+
+  .camera-wrapper {
+    position: relative; border-radius: 10px; overflow: hidden;
+    border: 2px solid var(--border);
+    background: var(--bg);
+  }
+
+  .camera-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+
+  .camera-crosshair {
+    width: 120px; height: 120px;
+    border: 2px solid rgba(79,158,255,0.6);
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(79,158,255,0.2);
+  }
+
+  /* ── RECEIPT ── */
+  #receipt-preview {
+    background: white;
+    color: #111;
+    border-radius: 10px;
+    padding: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    max-width: 320px;
+    margin: 0 auto;
+    box-shadow: var(--shadow);
+  }
+
+  #receipt-preview h2 {
+    font-size: 18px; text-align: center; font-weight: 700;
+    letter-spacing: -0.5px; margin-bottom: 4px;
+  }
+
+  .receipt-divider {
+    border: none; border-top: 1px dashed #ccc; margin: 12px 0;
+  }
+
+  .receipt-row {
+    display: flex; justify-content: space-between;
+    gap: 12px;
+  }
+
+  .receipt-label { color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .receipt-val { font-weight: 600; color: #111; }
+
+  #qr-code-container { display: flex; justify-content: center; margin: 12px 0; }
+  #barcode-container { display: flex; justify-content: center; margin: 8px 0; }
+
+  /* ── SCAN ── */
+  .scan-input-wrap {
+    position: relative;
+    display: flex; align-items: center;
+  }
+
+  .scan-icon {
+    position: absolute; left: 14px;
+    color: var(--text3);
+  }
+
+  #scan-input {
+    padding-left: 42px;
+    font-family: var(--mono);
+    font-size: 15px;
+    height: 52px;
+    letter-spacing: 1px;
+  }
+
+  /* ── RETRIEVE CARD ── */
+  #retrieve-result {
+    display: none;
+  }
+
+  .retrieve-photo {
+    width: 100%; aspect-ratio: 4/3;
+    object-fit: cover; border-radius: 10px;
+    border: 2px solid var(--border2);
+  }
+
+  .verify-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+    margin: 16px 0;
+  }
+
+  .verify-bar.invalid {
+    background: rgba(239,68,68,0.08);
+    border-color: rgba(239,68,68,0.2);
+  }
+
+  .verify-icon { font-size: 20px; }
+  .verify-text { font-weight: 500; flex: 1; }
+  .verify-sub { font-size: 11px; color: var(--text3); }
+
+  /* ── STORAGE MAP ── */
+  .zone-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .zone-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 16px;
+  }
+
+  .zone-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .zone-label {
+    font-size: 24px; font-weight: 700;
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+
+  .zone-name { font-weight: 500; }
+  .zone-sub { font-size: 11px; color: var(--text3); }
+
+  .shelf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+
+  .shelf-slot {
+    aspect-ratio: 1; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--bg4);
+    color: var(--text3);
+  }
+
+  .shelf-slot.occupied {
+    background: rgba(79,158,255,0.15);
+    border-color: rgba(79,158,255,0.3);
+    color: var(--accent);
+  }
+
+  .shelf-slot.selected {
+    background: rgba(79,158,255,0.3);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 0 8px rgba(79,158,255,0.3);
+  }
+
+  /* ── ACTIVITY LOG ── */
+  .log-entry {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+
+  .log-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 6px;
+  }
+
+  .log-body { flex: 1; }
+  .log-msg { font-size: 13px; }
+  .log-meta { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    display: none;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn { from { opacity:0; transform: scale(0.95) translateY(10px); } }
+
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .modal-sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+
+  /* ── ALERTS ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .alert-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: var(--green); }
+  .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: var(--red); }
+  .alert-info { background: rgba(79,158,255,0.1); border: 1px solid rgba(79,158,255,0.2); color: var(--accent); }
+
+  /* ── PHOTO CAPTURED ── */
+  .photo-captured {
+    width: 100%; aspect-ratio: 4/3;
+    object-fit: cover; border-radius: 10px;
+    border: 2px solid var(--green);
+    box-shadow: 0 0 20px rgba(34,197,94,0.2);
+    display: none;
+  }
+
+  /* ── PROGRESS ── */
+  .step-indicator {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 28px;
+  }
+
+  .step {
+    display: flex; align-items: center; gap: 8px;
+    flex: 1;
+  }
+
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+    border: 2px solid var(--border2);
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .step.done .step-num {
+    background: var(--green); border-color: var(--green); color: white;
+  }
+
+  .step.active .step-num {
+    background: var(--accent); border-color: var(--accent); color: white;
+  }
+
+  .step-label { font-size: 11px; color: var(--text3); font-weight: 500; }
+  .step.active .step-label { color: var(--text); }
+  .step.done .step-label { color: var(--green); }
+
+  .step-line {
+    flex: 1; height: 1px;
+    background: var(--border);
+    margin: 0 8px;
+  }
+
+  .step-line.done { background: var(--green); }
+
+  /* ── SEARCH ── */
+  .search-wrap { position: relative; margin-bottom: 20px; }
+
+  #global-search {
+    padding-left: 40px;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); pointer-events: none; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--card); border: 1px solid var(--border2);
+    border-radius: 12px; padding: 14px 20px;
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px;
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+    z-index: 9999; max-width: 320px;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── ADMIN ── */
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  /* ── LOGIN ── */
+  #login-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9998;
+  }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 24px;
+    padding: 48px;
+    width: 400px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+  }
+
+  .login-logo {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; margin: 0 auto 20px;
+  }
+
+  .login-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+  .login-sub { color: var(--text2); text-align: center; font-size: 13px; margin-bottom: 32px; }
+
+  /* ── MISC ── */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .gap-16 { gap: 16px; }
+  .gap-20 { gap: 20px; }
+  .mt-4 { margin-top: 4px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mt-24 { margin-top: 24px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-20 { margin-bottom: 20px; }
+  .text-sm { font-size: 12px; }
+  .text-muted { color: var(--text2); }
+  .font-mono { font-family: var(--mono); }
+  .font-bold { font-weight: 700; }
+  .w-full { width: 100%; }
+  .text-center { text-align: center; }
+  .hidden { display: none !important; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .three-col { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 24px; }
+
+  .pill {
+    display: inline-block; padding: 2px 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 10px; font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  @media print {
+    body * { visibility: hidden; }
+    #receipt-preview, #receipt-preview * { visibility: visible; }
+    #receipt-preview { position: absolute; left: 0; top: 0; width: 320px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">🔒</div>
+    <div class="login-title">SafeKeep POS</div>
+    <div class="login-sub">Goods Storage & Handling System</div>
+    <div class="form-group mb-20">
+      <label>Staff ID / Username</label>
+      <input type="text" id="login-user" placeholder="e.g. admin" value="admin">
+    </div>
+    <div class="form-group mb-20">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" value="admin123">
+    </div>
+    <button class="btn btn-primary btn-lg w-full" onclick="doLogin()">Sign In →</button>
+    <p class="text-sm text-muted text-center mt-16">Demo: admin / admin123 &nbsp;|&nbsp; staff / staff123</p>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="logo">
+    <div class="logo-mark">📦</div>
+    <div class="logo-text">SafeKeep</div>
+    <div class="logo-sub">POS System v2.1</div>
+  </div>
+  <nav>
+    <div class="nav-section-label">Operations</div>
+    <button class="nav-btn active" onclick="showView('dashboard')" data-view="dashboard">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" onclick="showView('checkin')" data-view="checkin">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      New Check-In
+    </button>
+    <button class="nav-btn" onclick="showView('retrieve')" data-view="retrieve">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      Scan & Retrieve
+    </button>
+    <button class="nav-btn" onclick="showView('search')" data-view="search">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Search Records
+    </button>
+    <div class="nav-section-label">Management</div>
+    <button class="nav-btn" onclick="showView('storage')" data-view="storage">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Storage Map
+    </button>
+    <button class="nav-btn" onclick="showView('admin')" data-view="admin">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Admin Panel
+    </button>
+    <button class="nav-btn" onclick="showView('logs')" data-view="logs">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Activity Logs
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="staff-badge" onclick="doLogout()">
+      <div class="staff-avatar" id="sidebar-avatar">AD</div>
+      <div>
+        <div class="staff-name" id="sidebar-name">Admin User</div>
+        <div class="staff-role" id="sidebar-role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="status-dot"></div>
+    <span style="font-size:11px;color:var(--text3)">System Online</span>
+    <div class="topbar-clock" id="clock">--:--:--</div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
+    <div class="view active" id="view-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card" style="--accent-color:var(--accent)">
+          <div class="stat-val" id="stat-active">0</div>
+          <div class="stat-label">Items In Storage</div>
+          <div class="stat-change" id="stat-active-lbl">Active</div>
+        </div>
+        <div class="stat-card" style="--accent-color:var(--green)">
+          <div class="stat-val" id="stat-today">0</div>
+          <div class="stat-label">Checked In Today</div>
+          <div class="stat-change">Today</div>
+        </div>
+        <div class="stat-card" style="--accent-color:var(--purple)">
+          <div class="stat-val" id="stat-collected">0</div>
+          <div class="stat-label">Total Collected</div>
+          <div class="stat-change">All time</div>
+        </div>
+        <div class="stat-card" style="--accent-color:var(--amber)">
+          <div class="stat-val" id="stat-overdue">0</div>
+          <div class="stat-label">Overdue Items</div>
+          <div class="stat-change" style="color:var(--amber)">Needs attention</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Recent Activity
+          </div>
+          <div id="dash-recent" class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Receipt ID</th><th>Customer</th><th>Location</th><th>Status</th><th>Time</th>
+              </tr></thead>
+              <tbody id="dash-recent-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Storage Zones
+          </div>
+          <div id="dash-zones"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ CHECK-IN ═══════════════════════ -->
+    <div class="view" id="view-checkin">
+      <!-- Steps -->
+      <div class="step-indicator" id="checkin-steps">
+        <div class="step active" id="step-1"><div class="step-num">1</div><span class="step-label">Customer Info</span></div>
+        <div class="step-line" id="line-12"></div>
+        <div class="step" id="step-2"><div class="step-num">2</div><span class="step-label">Item Details</span></div>
+        <div class="step-line" id="line-23"></div>
+        <div class="step" id="step-3"><div class="step-num">3</div><span class="step-label">Photo Capture</span></div>
+        <div class="step-line" id="line-34"></div>
+        <div class="step" id="step-4"><div class="step-num">4</div><span class="step-label">Print Receipt</span></div>
+      </div>
+
+      <!-- Step 1: Customer Info -->
+      <div id="checkin-step-1">
+        <div class="card">
+          <div class="card-title">Customer Information</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="cust-name" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" id="cust-phone" placeholder="+254 700 000 000">
+            </div>
+            <div class="form-group">
+              <label>ID / Passport Number</label>
+              <input type="text" id="cust-id" placeholder="Optional">
+            </div>
+            <div class="form-group">
+              <label>Expected Collection Time</label>
+              <input type="datetime-local" id="cust-collect-time">
+            </div>
+          </div>
+          <div class="flex gap-12 mt-20" style="justify-content:flex-end">
+            <button class="btn btn-primary" onclick="goCheckinStep(2)">Next: Item Details →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Item Details -->
+      <div id="checkin-step-2" class="hidden">
+        <div class="card">
+          <div class="card-title">Item Details</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Item Type *</label>
+              <select id="item-type">
+                <option value="">Select type...</option>
+                <option value="Luggage">Luggage / Suitcase</option>
+                <option value="Backpack">Backpack</option>
+                <option value="Handbag">Handbag / Purse</option>
+                <option value="Parcel">Parcel / Box</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantity</label>
+              <input type="number" id="item-qty" value="1" min="1" max="20">
+            </div>
+            <div class="form-group">
+              <label>Color / Appearance</label>
+              <input type="text" id="item-color" placeholder="e.g. Black, medium-sized">
+            </div>
+            <div class="form-group">
+              <label>Estimated Value (KES)</label>
+              <input type="number" id="item-value" placeholder="Optional">
+            </div>
+            <div class="form-group full">
+              <label>Additional Notes</label>
+              <textarea id="item-notes" placeholder="Fragile, handle with care..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Storage Duration</label>
+              <select id="item-duration">
+                <option value="2">2 hours</option>
+                <option value="4">4 hours</option>
+                <option value="8" selected>8 hours</option>
+                <option value="24">1 day</option>
+                <option value="48">2 days</option>
+                <option value="72">3 days</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Storage Zone (Auto-assign)</label>
+              <select id="item-zone">
+                <option value="auto">Auto-assign</option>
+                <option value="A">Zone A — Small items</option>
+                <option value="B">Zone B — Medium items</option>
+                <option value="C">Zone C — Large items</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-12 mt-20" style="justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="goCheckinStep(1)">← Back</button>
+            <button class="btn btn-primary" onclick="goCheckinStep(3)">Next: Capture Photo →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Photo Capture -->
+      <div id="checkin-step-3" class="hidden">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Photo Capture</div>
+            <p class="text-muted text-sm mb-16">Capture customer photo, item, or both for verification purposes.</p>
+
+            <div class="camera-wrapper" id="camera-wrapper">
+              <video id="camera-feed" autoplay muted playsinline></video>
+              <div class="camera-overlay">
+                <div class="camera-crosshair"></div>
+              </div>
+            </div>
+
+            <img id="photo-captured" class="photo-captured" alt="Captured photo">
+
+            <div class="flex gap-12 mt-16" style="flex-wrap:wrap">
+              <button class="btn btn-ghost" id="btn-start-camera" onclick="startCamera()">📷 Start Camera</button>
+              <button class="btn btn-success" id="btn-capture" onclick="capturePhoto()" style="display:none">📸 Capture</button>
+              <button class="btn btn-ghost" id="btn-retake" onclick="retakePhoto()" style="display:none">↺ Retake</button>
+              <button class="btn btn-ghost" onclick="uploadPhoto()">📁 Upload File</button>
+              <input type="file" id="file-upload" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+            </div>
+
+            <div class="flex gap-12 mt-24" style="justify-content:flex-end">
+              <button class="btn btn-ghost" onclick="goCheckinStep(2)">← Back</button>
+              <button class="btn btn-primary" onclick="finalizeCheckin()">✓ Confirm & Generate Receipt →</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Summary Preview</div>
+            <div id="checkin-summary"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Receipt -->
+      <div id="checkin-step-4" class="hidden">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Receipt Generated</div>
+            <div id="receipt-preview">
+              <h2>SafeKeep POS</h2>
+              <p style="text-align:center;font-size:10px;color:#666;margin-bottom:12px">Goods Storage & Handling System</p>
+              <hr class="receipt-divider">
+              <div id="qr-code-container"></div>
+              <div id="barcode-container"><svg id="barcode-svg"></svg></div>
+              <hr class="receipt-divider">
+              <div id="receipt-body"></div>
+              <hr class="receipt-divider">
+              <p style="text-align:center;font-size:9px;color:#999;margin-top:8px">Keep this receipt safe. Required for item collection.<br>Data deleted automatically after collection.</p>
+            </div>
+            <div class="flex gap-12 mt-20" style="justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="window.print()">🖨️ Print Receipt</button>
+              <button class="btn btn-ghost" onclick="resetCheckin()">+ New Check-In</button>
+              <button class="btn btn-ghost" onclick="showView('dashboard')">← Dashboard</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Saved Entry</div>
+            <div id="saved-entry-details"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ RETRIEVE ═══════════════════════ -->
+    <div class="view" id="view-retrieve">
+      <div class="card mb-20">
+        <div class="card-title">Scan Barcode or Enter Receipt ID</div>
+        <p class="text-muted text-sm mb-16">Use a barcode scanner or type the receipt ID manually. Format: <span class="pill">GN-2026-XXXXXX|SECRETCODE</span></p>
+        <div class="scan-input-wrap">
+          <svg class="scan-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="7" x2="8" y2="17"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="16" y1="7" x2="16" y2="17"/></svg>
+          <input type="text" id="scan-input" placeholder="GN-2026-000001|XXXXXXX" onkeydown="if(event.key==='Enter')doScan()">
+        </div>
+        <div class="flex gap-12 mt-16">
+          <button class="btn btn-primary" onclick="doScan()">🔍 Verify & Retrieve</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('scan-input').value=''; document.getElementById('retrieve-result').style.display='none'">Clear</button>
+        </div>
+      </div>
+
+      <div id="retrieve-result">
+        <div id="retrieve-verify-bar"></div>
+        <div class="two-col" id="retrieve-details-wrap">
+          <div class="card">
+            <div class="card-title">Customer & Item Details</div>
+            <div id="retrieve-info"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Verification Photo</div>
+            <img id="retrieve-photo" class="retrieve-photo" alt="Customer photo">
+            <div id="retrieve-actions" class="mt-20"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ SEARCH ═══════════════════════ -->
+    <div class="view" id="view-search">
+      <div class="card mb-20">
+        <div class="search-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="global-search" placeholder="Search by name, phone, receipt ID, or item type..." oninput="doSearch()">
+        </div>
+        <div class="flex gap-12">
+          <select id="search-status" onchange="doSearch()" style="max-width:200px">
+            <option value="">All Statuses</option>
+            <option value="active">Active (In Storage)</option>
+            <option value="collected">Collected</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <select id="search-zone" onchange="doSearch()" style="max-width:200px">
+            <option value="">All Zones</option>
+            <option value="A">Zone A</option>
+            <option value="B">Zone B</option>
+            <option value="C">Zone C</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Receipt ID</th><th>Customer</th><th>Phone</th>
+              <th>Item</th><th>Location</th><th>Status</th>
+              <th>Checked In</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="search-results-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ STORAGE MAP ═══════════════════════ -->
+    <div class="view" id="view-storage">
+      <div class="flex items-center justify-between mb-20">
+        <div>
+          <h2 style="font-size:18px;font-weight:700">Storage Map</h2>
+          <p class="text-muted text-sm">Real-time view of all storage locations</p>
+        </div>
+        <div class="flex gap-12 items-center">
+          <div class="flex items-center gap-8">
+            <div style="width:12px;height:12px;border-radius:3px;background:var(--bg4);border:1px solid var(--border)"></div>
+            <span class="text-sm text-muted">Free</span>
+          </div>
+          <div class="flex items-center gap-8">
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(79,158,255,0.15);border:1px solid rgba(79,158,255,0.3)"></div>
+            <span class="text-sm text-muted">Occupied</span>
+          </div>
+        </div>
+      </div>
+      <div class="zone-grid" id="storage-map"></div>
+    </div>
+
+    <!-- ═══════════════════════ ADMIN ═══════════════════════ -->
+    <div class="view" id="view-admin">
+      <div class="admin-grid">
+        <div class="card">
+          <div class="card-title">System Settings</div>
+          <div class="form-group mb-16">
+            <label>Business Name</label>
+            <input type="text" id="set-biz-name" value="SafeKeep POS">
+          </div>
+          <div class="form-group mb-16">
+            <label>Auto-Delete After Collection (hours)</label>
+            <input type="number" id="set-delete-hours" value="24" min="1" max="168">
+          </div>
+          <div class="form-group mb-16">
+            <label>Storage Fee Per Hour (KES)</label>
+            <input type="number" id="set-fee" value="50">
+          </div>
+          <div class="form-group mb-16">
+            <label>Overdue Threshold (hours)</label>
+            <input type="number" id="set-overdue-hrs" value="2">
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Staff Management</div>
+          <div id="staff-list" class="mb-16"></div>
+          <hr>
+          <div class="card-title mt-16">Add Staff</div>
+          <div class="form-group mb-12">
+            <label>Name</label>
+            <input type="text" id="new-staff-name" placeholder="Jane Doe">
+          </div>
+          <div class="form-group mb-12">
+            <label>Username</label>
+            <input type="text" id="new-staff-user" placeholder="jdoe">
+          </div>
+          <div class="form-group mb-12">
+            <label>Password</label>
+            <input type="password" id="new-staff-pass" placeholder="••••••••">
+          </div>
+          <div class="form-group mb-16">
+            <label>Role</label>
+            <select id="new-staff-role">
+              <option value="staff">Staff</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <button class="btn btn-success" onclick="addStaff()">+ Add Staff Member</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Data Cleanup</div>
+          <p class="text-muted text-sm mb-16">Force-run the cleanup job to delete collected items past the auto-delete threshold.</p>
+          <div id="cleanup-log" class="mb-16"></div>
+          <button class="btn btn-danger" onclick="runCleanup()">🗑️ Run Cleanup Now</button>
+          <button class="btn btn-ghost mt-8" onclick="exportData()">⬇ Export CSV</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">System Stats</div>
+          <div id="admin-stats"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════ LOGS ═══════════════════════ -->
+    <div class="view" id="view-logs">
+      <div class="card">
+        <div class="flex items-center justify-between mb-16">
+          <div class="card-title" style="margin:0">Activity Logs</div>
+          <button class="btn btn-ghost btn-sm" onclick="renderLogs()">↺ Refresh</button>
+        </div>
+        <div id="logs-container"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Confirm Release</div>
+    <div class="modal-sub" id="modal-sub">Please verify the customer's identity before releasing.</div>
+    <div id="modal-body"></div>
+    <div class="flex gap-12 mt-24" style="justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" id="modal-confirm-btn">✓ Release Item</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  DATA LAYER — IndexedDB wrapper + in-memory store
+// ══════════════════════════════════════════════════
+
+let DB = {
+  items: [],      // active storage entries
+  logs: [],       // activity log
+  staff: [
+    { id: 1, name: 'Admin User', username: 'admin', password: 'admin123', role: 'admin', initials: 'AD' },
+    { id: 2, name: 'Staff User', username: 'staff', password: 'staff123', role: 'staff', initials: 'SU' }
+  ],
+  settings: {
+    bizName: 'SafeKeep POS',
+    deleteAfterHours: 24,
+    feePerHour: 50,
+    overdueThreshold: 2
+  },
+  nextId: 1
+};
+
+// Storage zones definition
+const ZONES = {
+  A: { name: 'Zone A', desc: 'Small items', shelves: ['A1','A2','A3','A4','A5','A6','A7','A8','A9','A10','A11','A12'] },
+  B: { name: 'Zone B', desc: 'Medium items', shelves: ['B1','B2','B3','B4','B5','B6','B7','B8','B9','B10','B11','B12'] },
+  C: { name: 'Zone C', desc: 'Large items', shelves: ['C1','C2','C3','C4','C5','C6','C7','C8','C9','C10','C11','C12'] }
+};
+
+// Persist to localStorage
+function saveDB() {
+  try {
+    const toSave = { items: DB.items.map(i => ({...i, photo: i.photo ? '[photo]' : null})), logs: DB.logs.slice(-200), staff: DB.staff, settings: DB.settings, nextId: DB.nextId };
+    localStorage.setItem('sk_db', JSON.stringify(toSave));
+    // Save photos separately
+    DB.items.forEach(i => { if(i.photo) { try { localStorage.setItem('sk_photo_'+i.id, i.photo); } catch(e){} } });
+  } catch(e) {}
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem('sk_db');
+    if(raw) {
+      const saved = JSON.parse(raw);
+      DB.items = (saved.items || []).map(i => {
+        const photo = localStorage.getItem('sk_photo_'+i.id);
+        return { ...i, photo: photo || null };
+      });
+      DB.logs = saved.logs || [];
+      if(saved.staff) DB.staff = saved.staff;
+      if(saved.settings) DB.settings = saved.settings;
+      DB.nextId = saved.nextId || 1;
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════
+//  ID & SECRET GENERATION
+// ══════════════════════════════════════════════════
+
+function generateReceiptId() {
+  const year = new Date().getFullYear();
+  const seq = String(DB.nextId).padStart(6, '0');
+  DB.nextId++;
+  return `GN-${year}-${seq}`;
+}
+
+function generateSecret() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for(let i=0; i<7; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+function makeBarcode(receiptId, secret) {
+  return `${receiptId}|${secret}`;
+}
+
+// ══════════════════════════════════════════════════
+//  STORAGE AUTO-ASSIGN
+// ══════════════════════════════════════════════════
+
+function getOccupiedSlots() {
+  return new Set(DB.items.filter(i => i.status === 'active').map(i => i.storageLocation));
+}
+
+function autoAssignLocation(preferredZone) {
+  const occupied = getOccupiedSlots();
+  const zones = preferredZone && preferredZone !== 'auto' ? [preferredZone] : ['A','B','C'];
+  for(const z of zones) {
+    for(const shelf of ZONES[z].shelves) {
+      if(!occupied.has(shelf)) return shelf;
+    }
+  }
+  // Try all zones if preferred zone is full
+  for(const z of ['A','B','C']) {
+    for(const shelf of ZONES[z].shelves) {
+      if(!occupied.has(shelf)) return shelf;
+    }
+  }
+  return 'OVERFLOW';
+}
+
+// ══════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════
+
+let currentStaff = null;
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const found = DB.staff.find(s => s.username === user && s.password === pass);
+  if(found) {
+    currentStaff = found;
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('sidebar-name').textContent = found.name;
+    document.getElementById('sidebar-role').textContent = found.role === 'admin' ? 'Administrator' : 'Staff';
+    document.getElementById('sidebar-avatar').textContent = found.initials || found.name.slice(0,2).toUpperCase();
+    addLog('login', `${found.name} signed in`, 'info');
+    refreshAll();
+    toast('✓ Welcome back, ' + found.name.split(' ')[0] + '!', 'success');
+  } else {
+    toast('Invalid credentials. Try again.', 'error');
+  }
+}
+
+function doLogout() {
+  if(!confirm('Sign out?')) return;
+  addLog('logout', `${currentStaff.name} signed out`, 'info');
+  currentStaff = null;
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════════
+//  VIEW ROUTING
+// ══════════════════════════════════════════════════
+
+const VIEW_TITLES = { dashboard: 'Dashboard', checkin: 'New Check-In', retrieve: 'Scan & Retrieve', search: 'Search Records', storage: 'Storage Map', admin: 'Admin Panel', logs: 'Activity Logs' };
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelector(`[data-view="${name}"]`).classList.add('active');
+  document.getElementById('page-title').textContent = VIEW_TITLES[name];
+  // Refresh relevant view
+  if(name==='dashboard') renderDashboard();
+  if(name==='search') doSearch();
+  if(name==='storage') renderStorageMap();
+  if(name==='admin') renderAdmin();
+  if(name==='logs') renderLogs();
+}
+
+// ══════════════════════════════════════════════════
+//  CHECK-IN FLOW
+// ══════════════════════════════════════════════════
+
+let currentStep = 1;
+let capturedPhotoData = null;
+let cameraStream = null;
+let pendingEntry = null;
+
+function goCheckinStep(step) {
+  // Validate
+  if(step === 2) {
+    if(!document.getElementById('cust-name').value.trim()) { toast('Please enter customer name', 'error'); return; }
+    if(!document.getElementById('cust-phone').value.trim()) { toast('Please enter phone number', 'error'); return; }
+  }
+  if(step === 3) {
+    if(!document.getElementById('item-type').value) { toast('Please select item type', 'error'); return; }
+    updateCheckinSummary();
+  }
+
+  for(let i=1; i<=4; i++) {
+    const el = document.getElementById('checkin-step-'+i);
+    if(el) el.classList.add('hidden');
+  }
+  document.getElementById('checkin-step-'+step).classList.remove('hidden');
+
+  // Update step indicators
+  for(let i=1; i<=4; i++) {
+    const stepEl = document.getElementById('step-'+i);
+    stepEl.classList.remove('active','done');
+    if(i < step) stepEl.classList.add('done');
+    if(i === step) stepEl.classList.add('active');
+  }
+  for(let pair of [['12',1,2],['23',2,3],['34',3,4]]) {
+    const line = document.getElementById('line-'+pair[0]);
+    line.classList.toggle('done', step > pair[1]);
+  }
+  currentStep = step;
+}
+
+function updateCheckinSummary() {
+  document.getElementById('checkin-summary').innerHTML = `
+    <table style="width:100%;font-size:13px">
+      <tr><td class="text-muted" style="padding:6px 0">Customer</td><td style="font-weight:500">${esc(document.getElementById('cust-name').value)}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Phone</td><td>${esc(document.getElementById('cust-phone').value)}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Item Type</td><td>${esc(document.getElementById('item-type').value)}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Quantity</td><td>${document.getElementById('item-qty').value}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Duration</td><td>${document.getElementById('item-duration').options[document.getElementById('item-duration').selectedIndex].text}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Zone</td><td>${document.getElementById('item-zone').options[document.getElementById('item-zone').selectedIndex].text}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Notes</td><td>${esc(document.getElementById('item-notes').value) || '—'}</td></tr>
+    </table>`;
+}
+
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+    const video = document.getElementById('camera-feed');
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    document.getElementById('photo-captured').style.display = 'none';
+    document.getElementById('btn-start-camera').style.display = 'none';
+    document.getElementById('btn-capture').style.display = '';
+    document.getElementById('btn-retake').style.display = 'none';
+  } catch(e) {
+    toast('Camera not available. Please upload a photo instead.', 'error');
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('camera-feed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  capturedPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+  stopCamera();
+  const img = document.getElementById('photo-captured');
+  img.src = capturedPhotoData;
+  img.style.display = 'block';
+  document.getElementById('btn-capture').style.display = 'none';
+  document.getElementById('btn-retake').style.display = '';
+  toast('Photo captured!', 'success');
+}
+
+function retakePhoto() {
+  capturedPhotoData = null;
+  document.getElementById('photo-captured').style.display = 'none';
+  document.getElementById('btn-retake').style.display = 'none';
+  document.getElementById('btn-start-camera').style.display = '';
+}
+
+function stopCamera() {
+  if(cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const video = document.getElementById('camera-feed');
+  video.srcObject = null;
+}
+
+function uploadPhoto() { document.getElementById('file-upload').click(); }
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    capturedPhotoData = ev.target.result;
+    const img = document.getElementById('photo-captured');
+    img.src = capturedPhotoData;
+    img.style.display = 'block';
+    document.getElementById('btn-retake').style.display = '';
+    toast('Photo uploaded!', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function finalizeCheckin() {
+  stopCamera();
+  const rid = generateReceiptId();
+  const secret = generateSecret();
+  const barcode = makeBarcode(rid, secret);
+  const zone = document.getElementById('item-zone').value;
+  const location = autoAssignLocation(zone === 'auto' ? null : zone);
+  const durationHours = parseInt(document.getElementById('item-duration').value);
+  const now = new Date();
+  const expiry = new Date(now.getTime() + durationHours * 3600000);
+
+  const entry = {
+    id: rid,
+    secret,
+    barcode,
+    customerName: document.getElementById('cust-name').value.trim(),
+    customerPhone: document.getElementById('cust-phone').value.trim(),
+    customerId: document.getElementById('cust-id').value.trim(),
+    itemType: document.getElementById('item-type').value,
+    itemQty: parseInt(document.getElementById('item-qty').value),
+    itemColor: document.getElementById('item-color').value.trim(),
+    itemValue: document.getElementById('item-value').value,
+    itemNotes: document.getElementById('item-notes').value.trim(),
+    storageLocation: location,
+    durationHours,
+    checkinTime: now.toISOString(),
+    expiryTime: expiry.toISOString(),
+    status: 'active',
+    photo: capturedPhotoData,
+    staffId: currentStaff.id,
+    staffName: currentStaff.name,
+    collectTime: null
+  };
+
+  DB.items.push(entry);
+  pendingEntry = entry;
+  saveDB();
+  addLog('checkin', `${entry.itemQty}x ${entry.itemType} checked in for ${entry.customerName} → ${location}`, 'success');
+
+  renderReceipt(entry);
+  renderSavedEntry(entry);
+  goCheckinStep(4);
+  toast('✓ Receipt generated! Item stored at ' + location, 'success');
+}
+
+function renderReceipt(entry) {
+  // QR Code
+  const qrContainer = document.getElementById('qr-code-container');
+  qrContainer.innerHTML = '';
+  try {
+    new QRCode(qrContainer, {
+      text: entry.barcode,
+      width: 120, height: 120,
+      colorDark: '#000', colorLight: '#fff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) { qrContainer.textContent = entry.barcode; }
+
+  // Barcode
+  try {
+    JsBarcode('#barcode-svg', entry.barcode.replace('|','!'), {
+      format: 'CODE128', width: 1.5, height: 40,
+      displayValue: false, margin: 0
+    });
+  } catch(e) {}
+
+  const checkin = new Date(entry.checkinTime);
+  const expiry = new Date(entry.expiryTime);
+
+  document.getElementById('receipt-body').innerHTML = `
+    <div class="receipt-row"><span class="receipt-label">Receipt ID</span><span class="receipt-val" style="font-size:11px">${entry.id}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Secret Code</span><span class="receipt-val" style="font-size:11px;letter-spacing:1px">${entry.secret}</span></div>
+    <hr class="receipt-divider">
+    <div class="receipt-row"><span class="receipt-label">Customer</span><span class="receipt-val">${entry.customerName}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Phone</span><span class="receipt-val">${entry.customerPhone}</span></div>
+    <hr class="receipt-divider">
+    <div class="receipt-row"><span class="receipt-label">Item</span><span class="receipt-val">${entry.itemQty}x ${entry.itemType}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Location</span><span class="receipt-val">${entry.storageLocation}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Checked In</span><span class="receipt-val" style="font-size:10px">${checkin.toLocaleString()}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Expiry</span><span class="receipt-val" style="font-size:10px">${expiry.toLocaleString()}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Fee</span><span class="receipt-val">KES ${entry.durationHours * DB.settings.feePerHour}</span></div>
+    <div class="receipt-row mt-4"><span class="receipt-label">Staff</span><span class="receipt-val">${entry.staffName}</span></div>`;
+}
+
+function renderSavedEntry(entry) {
+  document.getElementById('saved-entry-details').innerHTML = `
+    <div class="alert alert-success">✓ Item successfully stored at location <strong>${entry.storageLocation}</strong></div>
+    <table style="width:100%;font-size:13px">
+      <tr><td class="text-muted" style="padding:6px 0;width:40%">Receipt ID</td><td class="mono font-bold">${entry.id}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Secret Code</td><td class="mono font-bold" style="letter-spacing:2px;color:var(--accent)">${entry.secret}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Barcode Data</td><td class="mono" style="font-size:10px;word-break:break-all">${entry.barcode}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Customer</td><td>${esc(entry.customerName)}</td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Storage Zone</td><td><span style="color:var(--accent);font-weight:700;font-size:18px;font-family:var(--mono)">${entry.storageLocation}</span></td></tr>
+      <tr><td class="text-muted" style="padding:6px 0">Expires</td><td>${new Date(entry.expiryTime).toLocaleString()}</td></tr>
+      ${entry.photo ? `<tr><td class="text-muted" style="padding:6px 0">Photo</td><td><img src="${entry.photo}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"></td></tr>` : ''}
+    </table>`;
+}
+
+function resetCheckin() {
+  document.getElementById('cust-name').value = '';
+  document.getElementById('cust-phone').value = '';
+  document.getElementById('cust-id').value = '';
+  document.getElementById('cust-collect-time').value = '';
+  document.getElementById('item-type').value = '';
+  document.getElementById('item-qty').value = '1';
+  document.getElementById('item-color').value = '';
+  document.getElementById('item-value').value = '';
+  document.getElementById('item-notes').value = '';
+  document.getElementById('item-zone').value = 'auto';
+  capturedPhotoData = null;
+  pendingEntry = null;
+  stopCamera();
+  document.getElementById('photo-captured').style.display = 'none';
+  document.getElementById('btn-start-camera').style.display = '';
+  document.getElementById('btn-capture').style.display = 'none';
+  document.getElementById('btn-retake').style.display = 'none';
+  goCheckinStep(1);
+}
+
+// ══════════════════════════════════════════════════
+//  SCAN & RETRIEVE
+// ══════════════════════════════════════════════════
+
+function doScan() {
+  const raw = document.getElementById('scan-input').value.trim();
+  if(!raw) { toast('Please enter or scan a barcode', 'error'); return; }
+
+  const resultDiv = document.getElementById('retrieve-result');
+  const verifyBar = document.getElementById('retrieve-verify-bar');
+
+  // Parse barcode: ID|SECRET
+  const sep = raw.indexOf('|');
+  if(sep === -1) {
+    verifyBar.innerHTML = `<div class="verify-bar invalid"><span class="verify-icon">✗</span><div><div class="verify-text">Invalid barcode format</div><div class="verify-sub">Expected format: GN-YYYY-XXXXXX|SECRETCODE</div></div></div>`;
+    resultDiv.style.display = 'block';
+    document.getElementById('retrieve-details-wrap').style.display = 'none';
+    addLog('scan_fail', `Invalid barcode format: ${raw}`, 'error');
+    return;
+  }
+
+  const receiptId = raw.slice(0, sep);
+  const secret = raw.slice(sep+1);
+
+  const entry = DB.items.find(i => i.id === receiptId);
+
+  if(!entry) {
+    verifyBar.innerHTML = `<div class="verify-bar invalid"><span class="verify-icon">✗</span><div><div class="verify-text">Receipt not found</div><div class="verify-sub">ID "${receiptId}" does not exist in the system</div></div></div>`;
+    resultDiv.style.display = 'block';
+    document.getElementById('retrieve-details-wrap').style.display = 'none';
+    addLog('scan_fail', `Receipt not found: ${receiptId}`, 'error');
+    return;
+  }
+
+  if(entry.secret !== secret) {
+    verifyBar.innerHTML = `<div class="verify-bar invalid"><span class="verify-icon">✗</span><div><div class="verify-text">Invalid secret code — Possible fraud</div><div class="verify-sub">The secret code on this receipt does not match our records</div></div></div>`;
+    resultDiv.style.display = 'block';
+    document.getElementById('retrieve-details-wrap').style.display = 'none';
+    addLog('scan_fail', `Secret mismatch for ${receiptId} — possible fraud`, 'error');
+    return;
+  }
+
+  if(entry.status === 'collected') {
+    verifyBar.innerHTML = `<div class="verify-bar invalid"><span class="verify-icon">⚠</span><div><div class="verify-text">Already collected</div><div class="verify-sub">This item was collected on ${entry.collectTime ? new Date(entry.collectTime).toLocaleString() : 'unknown date'}</div></div></div>`;
+    resultDiv.style.display = 'block';
+    document.getElementById('retrieve-details-wrap').style.display = 'none';
+    addLog('scan_reuse', `Attempted reuse of collected receipt: ${receiptId}`, 'error');
+    return;
+  }
+
+  // VALID
+  const isOverdue = new Date() > new Date(entry.expiryTime);
+  verifyBar.innerHTML = `<div class="verify-bar"><span class="verify-icon">✓</span><div><div class="verify-text" style="color:var(--green)">Verified — Valid Receipt</div><div class="verify-sub">ID: ${entry.id} · Secret: ${entry.secret} · Location: <strong>${entry.storageLocation}</strong>${isOverdue ? ' · <span style="color:var(--amber)">⚠ OVERDUE</span>' : ''}</div></div></div>`;
+
+  // Fill details
+  document.getElementById('retrieve-info').innerHTML = `
+    <table style="width:100%;font-size:13px">
+      <tr><td class="text-muted" style="padding:7px 0;width:40%">Receipt ID</td><td class="mono">${entry.id}</td></tr>
+      <tr><td class="text-muted" style="padding:7px 0">Customer</td><td style="font-weight:600">${esc(entry.customerName)}</td></tr>
+      <tr><td class="text-muted" style="padding:7px 0">Phone</td><td>${esc(entry.customerPhone)}</td></tr>
+      ${entry.customerId ? `<tr><td class="text-muted" style="padding:7px 0">ID Number</td><td>${esc(entry.customerId)}</td></tr>` : ''}
+      <tr><td class="text-muted" style="padding:7px 0">Item</td><td><strong>${entry.itemQty}x ${entry.itemType}</strong></td></tr>
+      ${entry.itemColor ? `<tr><td class="text-muted" style="padding:7px 0">Color</td><td>${esc(entry.itemColor)}</td></tr>` : ''}
+      ${entry.itemNotes ? `<tr><td class="text-muted" style="padding:7px 0">Notes</td><td>${esc(entry.itemNotes)}</td></tr>` : ''}
+      <tr><td class="text-muted" style="padding:7px 0">Location</td><td><span style="font-size:20px;font-weight:700;color:var(--accent);font-family:var(--mono)">${entry.storageLocation}</span></td></tr>
+      <tr><td class="text-muted" style="padding:7px 0">Checked In</td><td>${new Date(entry.checkinTime).toLocaleString()}</td></tr>
+      <tr><td class="text-muted" style="padding:7px 0">Expires</td><td style="${isOverdue ? 'color:var(--amber)' : ''}">${new Date(entry.expiryTime).toLocaleString()}</td></tr>
+      <tr><td class="text-muted" style="padding:7px 0">Fee Due</td><td style="font-weight:600">KES ${entry.durationHours * DB.settings.feePerHour}</td></tr>
+    </table>`;
+
+  const photoEl = document.getElementById('retrieve-photo');
+  if(entry.photo) {
+    photoEl.src = entry.photo;
+    photoEl.style.display = 'block';
+  } else {
+    photoEl.style.display = 'none';
+  }
+
+  document.getElementById('retrieve-actions').innerHTML = `
+    <button class="btn btn-success w-full" style="font-size:15px" onclick="confirmRelease('${entry.id}')">✓ Release Item to Customer</button>
+    <p class="text-sm text-muted text-center mt-8">Verify customer identity matches photo before releasing</p>`;
+
+  resultDiv.style.display = 'block';
+  document.getElementById('retrieve-details-wrap').style.display = 'grid';
+  addLog('scan_ok', `Scanned ${entry.id} for ${entry.customerName}`, 'info');
+}
+
+function confirmRelease(receiptId) {
+  const entry = DB.items.find(i => i.id === receiptId);
+  if(!entry) return;
+
+  document.getElementById('modal-title').textContent = 'Confirm Item Release';
+  document.getElementById('modal-sub').textContent = `You are about to release items to ${entry.customerName}. This action cannot be undone.`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;font-size:13px">
+      <div class="receipt-row" style="color:var(--text)"><span class="text-muted">Customer:</span> <strong>${esc(entry.customerName)}</strong></div>
+      <div class="receipt-row mt-4" style="color:var(--text)"><span class="text-muted">Item:</span> ${entry.itemQty}x ${entry.itemType}</div>
+      <div class="receipt-row mt-4" style="color:var(--text)"><span class="text-muted">Location:</span> <span style="color:var(--accent);font-weight:700">${entry.storageLocation}</span></div>
+    </div>`;
+
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.onclick = () => releaseItem(receiptId);
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function releaseItem(receiptId) {
+  const entry = DB.items.find(i => i.id === receiptId);
+  if(!entry) return;
+  entry.status = 'collected';
+  entry.collectTime = new Date().toISOString();
+  entry.collectedBy = currentStaff.name;
+  saveDB();
+  closeModal();
+
+  // Schedule deletion
+  const deleteAfter = DB.settings.deleteAfterHours * 3600000;
+  setTimeout(() => deleteEntry(receiptId), deleteAfter);
+
+  document.getElementById('retrieve-result').style.display = 'none';
+  document.getElementById('scan-input').value = '';
+  addLog('release', `${entry.customerName}'s ${entry.itemType} released from ${entry.storageLocation} by ${currentStaff.name}`, 'success');
+  toast('✓ Item released! Data will be auto-deleted in ' + DB.settings.deleteAfterHours + 'h', 'success');
+}
+
+function deleteEntry(receiptId) {
+  const idx = DB.items.findIndex(i => i.id === receiptId);
+  if(idx !== -1) {
+    const entry = DB.items[idx];
+    addLog('autodelete', `Auto-deleted data for ${entry.customerName} (${receiptId})`, 'info');
+    DB.items.splice(idx, 1);
+    try { localStorage.removeItem('sk_photo_'+receiptId); } catch(e) {}
+    saveDB();
+  }
+}
+
+function closeModal() { document.getElementById('confirm-modal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════
+
+function renderDashboard() {
+  const now = new Date();
+  const today = now.toDateString();
+  const active = DB.items.filter(i => i.status === 'active');
+  const todayItems = DB.items.filter(i => new Date(i.checkinTime).toDateString() === today);
+  const collected = DB.items.filter(i => i.status === 'collected');
+  const overdue = active.filter(i => new Date(i.expiryTime) < now);
+
+  document.getElementById('stat-active').textContent = active.length;
+  document.getElementById('stat-today').textContent = todayItems.length;
+  document.getElementById('stat-collected').textContent = collected.length;
+  document.getElementById('stat-overdue').textContent = overdue.length;
+
+  // Recent table
+  const recent = [...DB.items].sort((a,b) => new Date(b.checkinTime) - new Date(a.checkinTime)).slice(0, 8);
+  document.getElementById('dash-recent-body').innerHTML = recent.map(i => `
+    <tr>
+      <td class="mono">${i.id}</td>
+      <td>${esc(i.customerName)}</td>
+      <td><span style="color:var(--accent);font-weight:600;font-family:var(--mono)">${i.storageLocation}</span></td>
+      <td>${statusBadge(i, now)}</td>
+      <td class="text-muted" style="font-size:11px">${timeAgo(new Date(i.checkinTime))}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted" style="padding:24px">No records yet</td></tr>';
+
+  // Zone summary
+  const occupied = getOccupiedSlots();
+  document.getElementById('dash-zones').innerHTML = Object.entries(ZONES).map(([zId, z]) => {
+    const total = z.shelves.length;
+    const used = z.shelves.filter(s => occupied.has(s)).length;
+    const pct = Math.round(used/total*100);
+    return `<div style="margin-bottom:16px">
+      <div class="flex items-center justify-between mb-8">
+        <span style="font-weight:600;font-family:var(--mono)">${zId}</span>
+        <span class="text-sm text-muted">${used}/${total} slots · ${pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;transition:width 0.3s"></div>
+      </div>
+      <div class="text-sm text-muted mt-4">${z.name} — ${z.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function statusBadge(item, now) {
+  now = now || new Date();
+  if(item.status === 'collected') return '<span class="badge badge-collected">Collected</span>';
+  if(new Date(item.expiryTime) < now) return '<span class="badge badge-overdue">Overdue</span>';
+  return '<span class="badge badge-active">Active</span>';
+}
+
+function timeAgo(date) {
+  const diff = Date.now() - date.getTime();
+  const m = Math.floor(diff/60000);
+  const h = Math.floor(m/60);
+  const d = Math.floor(h/24);
+  if(d > 0) return d+'d ago';
+  if(h > 0) return h+'h ago';
+  if(m > 0) return m+'m ago';
+  return 'Just now';
+}
+
+// ══════════════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════════════
+
+function doSearch() {
+  const q = (document.getElementById('global-search').value || '').toLowerCase();
+  const statusFilter = document.getElementById('search-status').value;
+  const zoneFilter = document.getElementById('search-zone').value;
+  const now = new Date();
+
+  let results = DB.items.filter(i => {
+    const matchQ = !q ||
+      i.id.toLowerCase().includes(q) ||
+      i.customerName.toLowerCase().includes(q) ||
+      i.customerPhone.includes(q) ||
+      i.itemType.toLowerCase().includes(q) ||
+      (i.storageLocation || '').toLowerCase().includes(q);
+    const matchStatus = !statusFilter || (() => {
+      if(statusFilter === 'collected') return i.status === 'collected';
+      if(statusFilter === 'overdue') return i.status === 'active' && new Date(i.expiryTime) < now;
+      if(statusFilter === 'active') return i.status === 'active';
+      return true;
+    })();
+    const matchZone = !zoneFilter || (i.storageLocation && i.storageLocation.startsWith(zoneFilter));
+    return matchQ && matchStatus && matchZone;
+  });
+
+  document.getElementById('search-results-body').innerHTML = results.map(i => `
+    <tr>
+      <td class="mono">${i.id}</td>
+      <td style="font-weight:500">${esc(i.customerName)}</td>
+      <td>${esc(i.customerPhone)}</td>
+      <td>${i.itemQty}x ${i.itemType}</td>
+      <td><span style="color:var(--accent);font-weight:600;font-family:var(--mono)">${i.storageLocation}</span></td>
+      <td>${statusBadge(i, now)}</td>
+      <td class="text-muted" style="font-size:11px">${new Date(i.checkinTime).toLocaleString()}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="quickScan('${i.id}|${i.secret}')">Retrieve</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" class="text-center text-muted" style="padding:24px">No results found</td></tr>';
+}
+
+function quickScan(barcode) {
+  showView('retrieve');
+  document.getElementById('scan-input').value = barcode;
+  setTimeout(doScan, 100);
+}
+
+// ══════════════════════════════════════════════════
+//  STORAGE MAP
+// ══════════════════════════════════════════════════
+
+function renderStorageMap() {
+  const occupied = getOccupiedSlots();
+  const items = DB.items.filter(i => i.status === 'active');
+  const locMap = {};
+  items.forEach(i => { locMap[i.storageLocation] = i; });
+
+  document.getElementById('storage-map').innerHTML = Object.entries(ZONES).map(([zId, z]) => {
+    const used = z.shelves.filter(s => occupied.has(s)).length;
+    return `<div class="zone-card">
+      <div class="zone-header">
+        <div class="zone-label">${zId}</div>
+        <div>
+          <div class="zone-name">${z.name}</div>
+          <div class="zone-sub">${z.desc} · ${used}/${z.shelves.length} occupied</div>
+        </div>
+      </div>
+      <div class="shelf-grid">
+        ${z.shelves.map(s => {
+          const item = locMap[s];
+          if(item) {
+            return `<div class="shelf-slot occupied" title="${item.customerName} — ${item.itemType}" onclick="quickScan('${item.id}|${item.secret}')">${s}</div>`;
+          }
+          return `<div class="shelf-slot" title="${s} — Available">${s}</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  ADMIN
+// ══════════════════════════════════════════════════
+
+function renderAdmin() {
+  if(currentStaff && currentStaff.role !== 'admin') {
+    document.getElementById('view-admin').innerHTML = '<div class="card"><div class="alert alert-error">Access denied. Administrator privileges required.</div></div>';
+    return;
+  }
+
+  // Load settings
+  document.getElementById('set-biz-name').value = DB.settings.bizName;
+  document.getElementById('set-delete-hours').value = DB.settings.deleteAfterHours;
+  document.getElementById('set-fee').value = DB.settings.feePerHour;
+  document.getElementById('set-overdue-hrs').value = DB.settings.overdueThreshold;
+
+  // Staff list
+  document.getElementById('staff-list').innerHTML = DB.staff.map(s => `
+    <div class="flex items-center justify-between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-12">
+        <div class="staff-avatar" style="width:32px;height:32px;font-size:12px">${s.initials || s.name.slice(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-size:13px;font-weight:500">${esc(s.name)}</div>
+          <div class="text-muted" style="font-size:11px">@${s.username} · ${s.role}</div>
+        </div>
+      </div>
+      ${s.id !== 1 ? `<button class="btn btn-ghost btn-sm" onclick="removeStaff(${s.id})">Remove</button>` : ''}
+    </div>`).join('');
+
+  // Stats
+  const now = new Date();
+  const total = DB.items.length;
+  const active = DB.items.filter(i => i.status === 'active').length;
+  const collected = DB.items.filter(i => i.status === 'collected').length;
+  const revenue = DB.items.reduce((s,i) => s + (i.durationHours||0) * DB.settings.feePerHour, 0);
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+      <div class="stat-card card-sm" style="--accent-color:var(--accent)"><div class="stat-val" style="font-size:24px">${total}</div><div class="stat-label">Total Records</div></div>
+      <div class="stat-card card-sm" style="--accent-color:var(--green)"><div class="stat-val" style="font-size:24px">${active}</div><div class="stat-label">Active</div></div>
+      <div class="stat-card card-sm" style="--accent-color:var(--purple)"><div class="stat-val" style="font-size:24px">${collected}</div><div class="stat-label">Collected</div></div>
+      <div class="stat-card card-sm" style="--accent-color:var(--amber)"><div class="stat-val" style="font-size:24px">KES ${revenue.toLocaleString()}</div><div class="stat-label">Est. Revenue</div></div>
+    </div>`;
+}
+
+function saveSettings() {
+  DB.settings.bizName = document.getElementById('set-biz-name').value;
+  DB.settings.deleteAfterHours = parseInt(document.getElementById('set-delete-hours').value) || 24;
+  DB.settings.feePerHour = parseInt(document.getElementById('set-fee').value) || 50;
+  DB.settings.overdueThreshold = parseInt(document.getElementById('set-overdue-hrs').value) || 2;
+  saveDB();
+  addLog('settings', 'System settings updated by ' + currentStaff.name, 'info');
+  toast('Settings saved!', 'success');
+}
+
+function addStaff() {
+  const name = document.getElementById('new-staff-name').value.trim();
+  const username = document.getElementById('new-staff-user').value.trim();
+  const password = document.getElementById('new-staff-pass').value;
+  const role = document.getElementById('new-staff-role').value;
+  if(!name || !username || !password) { toast('Please fill all fields', 'error'); return; }
+  if(DB.staff.find(s => s.username === username)) { toast('Username already exists', 'error'); return; }
+  const initials = name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  DB.staff.push({ id: Date.now(), name, username, password, role, initials });
+  saveDB();
+  addLog('staff_add', `New staff added: ${name} (${username})`, 'info');
+  toast('Staff member added!', 'success');
+  renderAdmin();
+}
+
+function removeStaff(id) {
+  if(!confirm('Remove this staff member?')) return;
+  DB.staff = DB.staff.filter(s => s.id !== id);
+  saveDB();
+  renderAdmin();
+  toast('Staff member removed', 'info');
+}
+
+function runCleanup() {
+  const now = new Date();
+  const threshold = DB.settings.deleteAfterHours * 3600000;
+  let count = 0;
+  DB.items = DB.items.filter(i => {
+    if(i.status === 'collected' && i.collectTime) {
+      const elapsed = now.getTime() - new Date(i.collectTime).getTime();
+      if(elapsed > threshold) {
+        try { localStorage.removeItem('sk_photo_'+i.id); } catch(e) {}
+        count++;
+        return false;
+      }
+    }
+    return true;
+  });
+  saveDB();
+  document.getElementById('cleanup-log').innerHTML = `<div class="alert alert-success">✓ Cleanup complete. ${count} record(s) deleted.</div>`;
+  addLog('cleanup', `Manual cleanup: ${count} records deleted`, 'info');
+}
+
+function exportData() {
+  const headers = ['id','customerName','customerPhone','itemType','itemQty','storageLocation','status','checkinTime','expiryTime'];
+  const csv = [headers.join(','), ...DB.items.map(i => headers.map(h => JSON.stringify(i[h]||'')).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'safekeep_export_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('Export downloaded', 'success');
+}
+
+// ══════════════════════════════════════════════════
+//  LOGS
+// ══════════════════════════════════════════════════
+
+function addLog(type, message, level) {
+  DB.logs.push({ type, message, level, time: new Date().toISOString(), staff: currentStaff?.name || 'System' });
+  if(DB.logs.length > 500) DB.logs = DB.logs.slice(-200);
+  try { saveDB(); } catch(e) {}
+}
+
+function renderLogs() {
+  const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--accent)', warn: 'var(--amber)' };
+  const logs = [...DB.logs].reverse();
+  document.getElementById('logs-container').innerHTML = logs.map(l => `
+    <div class="log-entry">
+      <div class="log-dot" style="background:${colors[l.level]||'var(--text3)'}"></div>
+      <div class="log-body">
+        <div class="log-msg">${esc(l.message)}</div>
+        <div class="log-meta">${new Date(l.time).toLocaleString()} · ${l.staff} · ${l.type}</div>
+      </div>
+    </div>`).join('') || '<p class="text-muted text-center" style="padding:24px">No activity logged yet</p>';
+}
+
+// ══════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════
+
+function esc(str) {
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  const icons = { success: '✓', error: '✗', info: 'ℹ' };
+  const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--accent)' };
+  el.innerHTML = `<span style="color:${colors[type]||'var(--accent)'}">●</span> ${msg}`;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function refreshAll() { renderDashboard(); doSearch(); renderStorageMap(); renderLogs(); }
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Auto-cleanup check every hour
+setInterval(() => {
+  const now = new Date();
+  const threshold = DB.settings.deleteAfterHours * 3600000;
+  DB.items = DB.items.filter(i => {
+    if(i.status === 'collected' && i.collectTime) {
+      const elapsed = now.getTime() - new Date(i.collectTime).getTime();
+      if(elapsed > threshold) {
+        try { localStorage.removeItem('sk_photo_'+i.id); } catch(e) {}
+        addLog('autodelete', `Auto-deleted: ${i.id}`, 'info');
+        return false;
+      }
+    }
+    return true;
+  });
+  saveDB();
+}, 3600000);
+
+// Barcode scanner — keyboards emit fast input ending in Enter
+let scanBuffer = '';
+let scanTimer = null;
+document.addEventListener('keydown', e => {
+  const active = document.activeElement;
+  if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+  if(e.key === 'Enter' && scanBuffer.length > 5) {
+    document.getElementById('scan-input').value = scanBuffer;
+    scanBuffer = '';
+    if(document.getElementById('view-retrieve').classList.contains('active')) doScan();
+    else showView('retrieve');
+    return;
+  }
+  if(e.key.length === 1) {
+    scanBuffer += e.key;
+    clearTimeout(scanTimer);
+    scanTimer = setTimeout(() => { scanBuffer = ''; }, 200);
+  }
+});
+
+// ══════════════════════════════════════════════════
+//  SEED DEMO DATA
+// ══════════════════════════════════════════════════
+
+function seedDemoData() {
+  if(DB.items.length > 0) return;
+  const demos = [
+    { name: 'Alice Wanjiku', phone: '+254 722 111 000', item: 'Luggage', zone: 'A', hrs: 4 },
+    { name: 'Brian Omondi', phone: '+254 733 222 111', item: 'Backpack', zone: 'B', hrs: 2 },
+    { name: 'Carol Njoroge', phone: '+254 700 333 222', item: 'Parcel', zone: 'C', hrs: 8 },
+    { name: 'David Kamau', phone: '+254 711 444 333', item: 'Handbag', zone: 'A', hrs: 1 },
+  ];
+  demos.forEach((d, i) => {
+    const rid = generateReceiptId();
+    const secret = generateSecret();
+    const location = autoAssignLocation(d.zone);
+    const now = new Date();
+    const checkin = new Date(now.getTime() - (i * 3600000));
+    const expiry = new Date(checkin.getTime() + d.hrs * 3600000);
+    DB.items.push({
+      id: rid, secret, barcode: makeBarcode(rid, secret),
+      customerName: d.name, customerPhone: d.phone, customerId: '',
+      itemType: d.item, itemQty: 1, itemColor: 'Black', itemValue: '',
+      itemNotes: 'Demo item', storageLocation: location,
+      durationHours: d.hrs, checkinTime: checkin.toISOString(),
+      expiryTime: expiry.toISOString(), status: 'active', photo: null,
+      staffId: 1, staffName: 'Admin User', collectTime: null
+    });
+  });
+  saveDB();
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+
+loadDB();
+seedDemoData();
+addLog('system', 'SafeKeep POS system started', 'info');
+</script>
+</body>
+</html>
